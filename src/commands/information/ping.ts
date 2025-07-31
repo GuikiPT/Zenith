@@ -1,15 +1,12 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
-import { ApplicationCommandType, ApplicationIntegrationType, InteractionContextType, Message } from 'discord.js';
+import { ApplicationCommandType, ApplicationIntegrationType, EmbedBuilder, InteractionContextType, Message } from 'discord.js';
 
 @ApplyOptions<Command.Options>({
-	description: 'ping pong'
+	description: 'Ping the bot to check latency.'
 })
 export class UserCommand extends Command {
-	// Register Chat Input and Context Menu command
 	public override registerApplicationCommands(registry: Command.Registry) {
-		// Create shared integration types and contexts
-		// These allow the command to be used in guilds and DMs
 		const integrationTypes: ApplicationIntegrationType[] = [ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall];
 		const contexts: InteractionContextType[] = [
 			InteractionContextType.BotDM,
@@ -17,23 +14,18 @@ export class UserCommand extends Command {
 			InteractionContextType.PrivateChannel
 		];
 
-		// Register Chat Input command
 		registry.registerChatInputCommand({
 			name: this.name,
 			description: this.description,
 			integrationTypes,
 			contexts
 		});
-
-		// Register Context Menu command available from any message
 		registry.registerContextMenuCommand({
 			name: this.name,
 			type: ApplicationCommandType.Message,
 			integrationTypes,
 			contexts
 		});
-
-		// Register Context Menu command available from any user
 		registry.registerContextMenuCommand({
 			name: this.name,
 			type: ApplicationCommandType.User,
@@ -42,17 +34,12 @@ export class UserCommand extends Command {
 		});
 	}
 
-	// Message command
 	public override async messageRun(message: Message) {
 		return this.sendPing(message);
 	}
-
-	// Chat Input (slash) command
 	public override async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
 		return this.sendPing(interaction);
 	}
-
-	// Context Menu command
 	public override async contextMenuRun(interaction: Command.ContextMenuCommandInteraction) {
 		return this.sendPing(interaction);
 	}
@@ -60,21 +47,30 @@ export class UserCommand extends Command {
 	private async sendPing(interactionOrMessage: Message | Command.ChatInputCommandInteraction | Command.ContextMenuCommandInteraction) {
 		const pingMessage =
 			interactionOrMessage instanceof Message
-				? interactionOrMessage.channel?.isSendable() && (await interactionOrMessage.channel.send({ content: 'Ping?' }))
-				: await interactionOrMessage.reply({ content: 'Ping?', fetchReply: true });
+				? interactionOrMessage.channel?.isSendable() && (await interactionOrMessage.channel.send({ content: '<a:Loading:1400601825702580334>' }))
+				: await interactionOrMessage.reply({ content: '<a:Loading:846571474268586015>' });
 
 		if (!pingMessage) return;
 
-		const content = `Pong! Bot Latency ${Math.round(this.container.client.ws.ping)}ms. API Latency ${
-			pingMessage.createdTimestamp - interactionOrMessage.createdTimestamp
-		}ms.`;
+		const PingEmbed = new EmbedBuilder()
+			.setColor(0x36373E)
+			.setTitle('Pong! 🏓')
+			.addFields(
+				{ name: 'Bot Latency ', value: `\`\`\`ini\n [ ${pingMessage.createdTimestamp - interactionOrMessage.createdTimestamp}ms ] \n\`\`\``, inline: true },
+				{ name: 'API Latency', value: `\`\`\`ini\n [ ${Math.round(this.container.client.ws.ping)}ms ] \n\`\`\``, inline: true }
+			);
+
+		if(this.container.client.user?.displayAvatarURL()){
+			PingEmbed.setThumbnail(this.container.client.user.displayAvatarURL());
+		}
 
 		if (interactionOrMessage instanceof Message) {
-			return pingMessage.edit({ content });
+			return pingMessage.edit({ embeds: [PingEmbed], content: null });
 		}
 
 		return interactionOrMessage.editReply({
-			content
+			embeds: [PingEmbed],
+			content: null
 		});
 	}
 }

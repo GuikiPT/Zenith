@@ -4,13 +4,21 @@ import { LogLevel, SapphireClient } from '@sapphire/framework';
 import { GatewayIntentBits } from 'discord.js';
 
 const client = new SapphireClient({
-	defaultPrefix: '!',
 	caseInsensitiveCommands: true,
+	defaultPrefix: 'z!',
+	hmr: {
+		enabled: process.env.NODE_ENV === 'development',
+	},
+	intents: [
+		GatewayIntentBits.DirectMessages,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.MessageContent
+	],
+	loadMessageCommandListeners: true,
 	logger: {
 		level: LogLevel.Debug
-	},
-	intents: [GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMessages, GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent],
-	loadMessageCommandListeners: true
+	}
 });
 
 const main = async () => {
